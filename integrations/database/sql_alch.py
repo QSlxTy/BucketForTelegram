@@ -4,6 +4,7 @@ from sqlalchemy.ext.asyncio import create_async_engine as _create_async_engine
 from sqlalchemy.orm import sessionmaker
 
 from integrations.database.models.file import File
+from integrations.database.models.storage import Storage
 from integrations.database.models.user import User
 from src.config import conf
 
@@ -30,6 +31,7 @@ class Database:
             session: AsyncSession,
             user: User = None,
             file: File = None,
+            storage: Storage = None
 
     ):
         """Initialize Database class.
@@ -39,6 +41,7 @@ class Database:
         self.session = session
         self.user = user or User()
         self.file = file or File()
+        self.storage = storage or Storage()
 
 
 
@@ -52,4 +55,5 @@ async def init_models(engine):
     async with engine.begin() as conn:
         await conn.run_sync(User.metadata.create_all)
         await conn.run_sync(File.metadata.create_all)
+        await conn.run_sync(Storage.metadata.create_all)
 

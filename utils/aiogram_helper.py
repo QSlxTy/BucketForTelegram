@@ -113,3 +113,11 @@ class SendMessage:
                 disable_web_page_preview=True
             )
         await self.state.update_data(msg=msg)
+
+def convert_bytes(bytes_value: int):
+    megabytes = bytes_value / (1024 * 1024)
+    if megabytes < 1024:
+        return f"{megabytes:.2f} MB"
+    else:
+        gigabytes = megabytes / 1024
+        return f"{gigabytes:.2f} GB"

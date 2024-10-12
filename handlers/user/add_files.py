@@ -33,7 +33,7 @@ async def get_files_msg(message: types.Message, state: FSMContext, session_maker
                                  message.document.file_size, 'document', session_maker)
         else:
             await SendMessage(event=message,
-                              text='<b>❗️Файл слишком большой, он не должен превышать 2000MB</b>',
+                              text='<b>❗️Файл слишком большой, бот не может скачивать файлы больше 2000MB</b>',
                               handler_name='get_files_msg',
                               keyboard=back_add_files_kb,
                               state=state).custom_send()
@@ -45,7 +45,7 @@ async def get_files_msg(message: types.Message, state: FSMContext, session_maker
                                  message.photo[-1].file_size, 'photo', session_maker)
         else:
             await SendMessage(event=message,
-                              text='<b>❗️Файл слишком большой, он не должен превышать 2000MB</b>',
+                              text='<b>❗️Файл слишком большой, бот не может скачивать файлы больше 2000MB</b>',
                               handler_name='get_files_msg',
                               keyboard=back_add_files_kb,
                               state=state).custom_send()
@@ -57,7 +57,7 @@ async def get_files_msg(message: types.Message, state: FSMContext, session_maker
                                  message.video.file_size, 'video', session_maker)
         else:
             await SendMessage(event=message,
-                              text='<b>Файл слишком большой, он не должен превышать 2000MB</b>',
+                              text='<b>❗️Файл слишком большой, бот не может скачивать файлы больше 2000MB</b>',
                               handler_name='get_files_msg',
                               keyboard=back_add_files_kb,
                               state=state).custom_send()
@@ -71,7 +71,7 @@ async def get_files_msg(message: types.Message, state: FSMContext, session_maker
                 pass
             else:
                 await SendMessage(event=message,
-                                  text='<b>❗Один из файлов слишком большой, он не должен превышать 2000MB</b>',
+                                  text='<b>❗Один из файлов слишком большой, бот не может скачивать файлы больше 2000MB</b>',
                                   handler_name='get_files_msg',
                                   keyboard=back_add_files_kb,
                                   state=state).custom_send()
@@ -91,7 +91,6 @@ async def get_files_msg(message: types.Message, state: FSMContext, session_maker
                                         destination=f'files/{message.from_user.id}/' + file.document.file_id)
                 await create_file_db(message.from_user.id, f'files/{message.from_user.id}/' + file.document.file_id,
                                      file.document.file_size, 'document', session_maker)
-
     else:
         await SendMessage(event=message,
                           text='<b>❗️Не могу обработать этот файл. Отправьте другой формат файла.</b>',
@@ -100,7 +99,7 @@ async def get_files_msg(message: types.Message, state: FSMContext, session_maker
                           state=state).custom_send()
         return
     await SendMessage(event=message,
-                      text='<b>Все файлы успешно загружены и сохранены в базе данных</b>',
+                      text='<b>✅Все файлы успешно загружены и сохранены в базе данных</b>',
                       handler_name='get_files_msg',
                       keyboard=back_menu_kb,
                       state=state).custom_send()

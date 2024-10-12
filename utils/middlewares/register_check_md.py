@@ -1,6 +1,8 @@
 from typing import Callable, Dict, Any, Awaitable, Union
 from aiogram import BaseMiddleware
 from aiogram.types import Message, CallbackQuery
+
+from integrations.database.models.storage import is_storage_exists_db, create_storage_db
 from integrations.database.models.user import is_user_exists_db, create_user_db
 
 
@@ -18,8 +20,8 @@ class RegisterCheck(BaseMiddleware):
             session_maker = data['session_maker']
             if not await is_user_exists_db(user_id=event.from_user.id, session_maker=session_maker):
                 await create_user_db(user_id=event.from_user.id,
-                                  username=event.from_user.username,
-                                  session_maker=session_maker)
-                return await handler(event, data)
-            else:
-                return await handler(event, data)
+                                     username=event.from_user.username,
+                                     session_maker=session_maker)
+            if not await is_storage_exists_db(user_id=event.from_user.id, session_maker=session_maker):
+                await create_storage_db(telegram_id=event.from_user.id, session_maker=session_maker)
+            return await handler(event, data)
