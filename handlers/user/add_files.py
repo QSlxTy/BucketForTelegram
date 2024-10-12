@@ -1,33 +1,111 @@
-from aiogram import types, Dispatcher, F
-from aiogram.filters import Command
-from aiogram.fsm.context import FSMContext
+import os
 
-from keyboards.menu_keyboard import menu_kb
+from aiogram import types, Dispatcher, F
+from aiogram.fsm.context import FSMContext
+from sqlalchemy.orm import sessionmaker
+
+from bot_start import bot
+from integrations.database.models.file import create_file_db
+from keyboards.user.user_keyboard import back_menu_kb, back_add_files_kb
 from utils.aiogram_helper import SendMessage
 from utils.states.user import FSMStart
 
 
-async def main_menu_call(call: types.CallbackQuery, state: FSMContext):
+async def start_get_files(call: types.CallbackQuery, state: FSMContext):
     await state.set_state(FSMStart.start)
     await SendMessage(event=call,
-                      text=f'<b>Привет, <code>{call.from_user.first_name}</code> 👋\n\n'
-                           'Я твоё персональное хранилище данных, я помогу тебе не потерять важные файлы</b>',
-                      handler_name='main_menu_call',
-                      keyboard=menu_kb,
+                      text=f'<b>Отправь мне файлы, а я их сохраню в надёжном месте 🔒</b>',
+                      handler_name='start_get_files',
+                      keyboard=back_menu_kb,
                       state=state).custom_send()
 
 
-async def main_menu_msg(message: types.Message, state: FSMContext):
+async def get_files_msg(message: types.Message, state: FSMContext, session_maker: sessionmaker):
     await state.set_state(FSMStart.start)
     await message.delete()
-    await SendMessage(event=message,
-                      text=f'<b>Привет, <code>{message.from_user.first_name}</code> 👋\n\n'
-                           'Я твоё персональное хранилище данных, я помогу тебе не потерять важные файлы</b>',
-                      handler_name='main_menu_msg',
-                      keyboard=menu_kb,
-                      state=state).custom_send()
+    if not os.path.exists(f'files/{message.from_user.id}'):
+        os.makedirs(f'files/{message.from_user.id}')
+    if message.document:
+        if message.document.file_size <= 2097152000:  # 2000MB
+            await bot.download_file(message.document,
+                                    destination=f'files/{message.from_user.id}/' + message.document.file_id)
+            await create_file_db(message.from_user.id, f'files/{message.from_user.id}/' + message.document.file_id,
+                                 message.document.file_size, 'document', session_maker)
+        else:
+            await SendMessage(event=message,
+                              text='<b>❗️Файл слишком большой, он не должен превышать 2000MB</b>',
+                              handler_name='get_files_msg',
+                              keyboard=back_add_files_kb,
+                              state=state).custom_send()
+    elif message.photo:
+        if message.photo[-1].file_size <= 2097152000:  # 2000MB
+            await bot.download_file(message.photo[-1].file_id,
+                                    destination=f'files/{message.from_user.id}/' + message.photo[-1].file_id)
+            await create_file_db(message.from_user.id, f'files/{message.from_user.id}/' + message.photo[-1].file_id,
+                                 message.photo[-1].file_size, 'photo', session_maker)
+        else:
+            await SendMessage(event=message,
+                              text='<b>❗️Файл слишком большой, он не должен превышать 2000MB</b>',
+                              handler_name='get_files_msg',
+                              keyboard=back_add_files_kb,
+                              state=state).custom_send()
+    elif message.video:
+        if message.video.file_size <= 2097152000:  # 2000MB
+            await bot.download_file(message.video.file_id,
+                                    destination=f'files/{message.from_user.id}/' + message.video.file_id)
+            await create_file_db(message.from_user.id, f'files/{message.from_user.id}/' + message.video.file_id,
+                                 message.video.file_size, 'video', session_maker)
+        else:
+            await SendMessage(event=message,
+                              text='<b>Файл слишком большой, он не должен превышать 2000MB</b>',
+                              handler_name='get_files_msg',
+                              keyboard=back_add_files_kb,
+                              state=state).custom_send()
+    elif message.album:
+        for file in message.album:
+            if file.document and file.document.file_size <= 2097152000:  # 2000MB
+                pass
+            elif file.video and file.video.file_size <= 2097152000:  # 2000MB
+                pass
+            elif file.photo and file.photo.file_size <= 2097152000:  # 2000MB
+                pass
+            else:
+                await SendMessage(event=message,
+                                  text='<b>❗Один из файлов слишком большой, он не должен превышать 2000MB</b>',
+                                  handler_name='get_files_msg',
+                                  keyboard=back_add_files_kb,
+                                  state=state).custom_send()
+                return
+            if file.photo:
+                await bot.download_file(file.photo[0].file_id,
+                                        destination=f'files/{message.from_user.id}/' + file.photo[0].file_id)
+                await create_file_db(message.from_user.id, f'files/{message.from_user.id}/' + file.photo[0].file_id,
+                                     file.photo[0].file_size, 'photo', session_maker)
+            elif file.video:
+                await bot.download_file(file.video.file_id,
+                                        destination=f'files/{message.from_user.id}/' + file.video.file_id)
+                await create_file_db(message.from_user.id, f'files/{message.from_user.id}/' + file.video.file_id,
+                                     file.video.file_size, 'video', session_maker)
+            elif file.document:
+                await bot.download_file(file.document.file_id,
+                                        destination=f'files/{message.from_user.id}/' + file.document.file_id)
+                await create_file_db(message.from_user.id, f'files/{message.from_user.id}/' + file.document.file_id,
+                                     file.document.file_size, 'document', session_maker)
 
+    else:
+        await SendMessage(event=message,
+                          text='<b>❗️Не могу обработать этот файл. Отправьте другой формат файла.</b>',
+                          handler_name='get_files_msg',
+                          keyboard=back_add_files_kb,
+                          state=state).custom_send()
+        return
+    await SendMessage(event=message,
+                      text='<b>Все файлы успешно загружены и сохранены в базе данных</b>',
+                      handler_name='get_files_msg',
+                      keyboard=back_menu_kb,
+                      state=state).custom_send()
 
 
 def register_start_handler(dp: Dispatcher):
-    dp.callback_query.register(main_menu_call, F.data == 'main_menu')
+    dp.callback_query.register(start_get_files, F.data == 'add_files')
+    dp.message.register(get_files_msg, F.content_type.in_({'document', 'photo', 'video', 'audio'}))
