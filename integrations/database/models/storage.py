@@ -11,8 +11,8 @@ class Storage(AbstractModel):
     __tablename__ = 'storages'
 
     telegram_id: Mapped[int] = mapped_column(BigInteger(), unique=True)
-    size_storage_byte: Mapped[int] = mapped_column(Text, default=None)
-    size_files_byte: Mapped[int] = mapped_column(Text, default=None)
+    size_storage_byte: Mapped[int] = mapped_column(BigInteger(), default=None)
+    size_files_byte: Mapped[int] = mapped_column(BigInteger(), default=None)
 
 
 async def get_storage_by_dict_db(select_by: dict, session_maker: sessionmaker) -> Storage:

@@ -13,3 +13,8 @@ async def back_add_files_kb():
     builder.button(text='Назад ↩️', callback_data='add_files')
     builder.adjust(1)
     return builder.as_markup()
+
+async def delete_message_kb():
+    builder = InlineKeyboardBuilder()
+    builder.button(text='❌Удалить это сообщение', callback_data='message_delete')
+    return builder.as_markup()

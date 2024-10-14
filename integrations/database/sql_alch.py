@@ -34,10 +34,6 @@ class Database:
             storage: Storage = None
 
     ):
-        """Initialize Database class.
-        :param session: AsyncSession to use
-        :param user: (Optional) User repository
-        """
         self.session = session
         self.user = user or User()
         self.file = file or File()

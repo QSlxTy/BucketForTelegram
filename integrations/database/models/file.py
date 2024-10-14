@@ -8,11 +8,11 @@ from ..modeles import AbstractModel
 
 
 class File(AbstractModel):
-    __tablename__ = 'users'
+    __tablename__ = 'files'
 
-    telegram_id: Mapped[int] = mapped_column(BigInteger(), unique=True)
+    telegram_id: Mapped[int] = mapped_column(BigInteger())
     destination: Mapped[str] = mapped_column(Text, default=None)
-    size_byte: Mapped[int] = mapped_column(Text, default=None)
+    size_byte: Mapped[int] = mapped_column(BigInteger(), default=None)
     date_upload: Mapped[datetime] = mapped_column()
     type: Mapped[str] = mapped_column(Text)
 
@@ -26,14 +26,14 @@ async def get_file_by_dict_db(select_by: dict, session_maker: sessionmaker) -> F
             return result.scalars().one()
 
 
-async def create_file_db(telegram_id: int, destination: str, size_bit: int, type: str, session_maker: sessionmaker) -> [
+async def create_file_db(telegram_id: int, destination: str, size_byte: int, type: str, session_maker: sessionmaker) -> [
     File, Exception]:
     async with session_maker() as session:
         async with session.begin():
             user = File(
                 telegram_id=telegram_id,
                 destination=destination,
-                size_bit=size_bit,
+                size_byte=size_byte,
                 date_upload=datetime.now(),
                 type=type
             )

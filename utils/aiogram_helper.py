@@ -1,11 +1,33 @@
-import os
-import shutil
-from typing import Optional, List, Literal
+from typing import Optional
 
+from aiogram import types, Dispatcher, F
 from aiogram.exceptions import TelegramBadRequest
-from aiogram.types import Message, InputMediaPhoto, InputMediaDocument, InputMediaAnimation, InputMediaVideo
+from aiogram.fsm.context import FSMContext
+from aiogram.types import Message
 
 from bot_start import logger
+from keyboards.user.user_keyboard import back_menu_kb
+
+
+async def progress_bar(correct_answers, total_tasks, max_score=100, total_blocks=10):
+    progress = (correct_answers / total_tasks) * max_score
+    if round(progress, 2) == 100.0:
+        filled_blocks = 10
+        empty_blocks = 0
+    else:
+        filled_blocks = int(total_blocks * (progress / 100))
+        empty_blocks = total_blocks - filled_blocks
+    progress_bar_str = '🟥' * filled_blocks + '🟩' * empty_blocks
+    return f"{progress_bar_str} -  <code>{progress:.2f} %</code>"
+
+
+async def convert_bytes(bytes_value: int, convert=1024):
+    megabytes = bytes_value / (convert * convert)
+    if megabytes < convert:
+        return f"{megabytes:.2f} MB"
+    else:
+        gigabytes = megabytes / convert
+        return f"{gigabytes:.2f} GB"
 
 
 class SendMessage:
@@ -114,10 +136,14 @@ class SendMessage:
             )
         await self.state.update_data(msg=msg)
 
-def convert_bytes(bytes_value: int):
-    megabytes = bytes_value / (1024 * 1024)
-    if megabytes < 1024:
-        return f"{megabytes:.2f} MB"
-    else:
-        gigabytes = megabytes / 1024
-        return f"{gigabytes:.2f} GB"
+
+async def delete_message(call: types.CallbackQuery, state: FSMContext):
+    await SendMessage(event=call, text='<b>❗️Ошибка отправки файла на сервер\n'
+                                       'Вернитесь в главное меню</b>', handler_name='delete_message',
+                      keyboard=back_menu_kb(),
+                      state=state).custom_send()
+    await call.message.delete()
+
+
+def register_delete_handler(dp: Dispatcher):
+    dp.callback_query.register(delete_message, F.data == 'message_delete')

@@ -7,7 +7,8 @@ from bot_start import dp, bot
 from handlers.register_handlers import register_handlers
 
 from integrations.database.sql_alch import create_connection, init_models, get_session_maker
-from utils.album_md import AlbumMiddleware
+from utils.middlewares.album_md import AlbumMiddleware
+from utils.middlewares.check_file_size_md import StorageCheckMiddleware
 from utils.middlewares.database_md import DatabaseMiddleware
 from utils.middlewares.register_check_md import RegisterCheck
 
@@ -19,8 +20,8 @@ async def start_bot():
     dp.message.middleware(RegisterCheck())
     dp.callback_query.middleware(RegisterCheck())
     dp.message.middleware(AlbumMiddleware())
+    dp.message.middleware(StorageCheckMiddleware())
     await register_handlers(dp)
-
     ''' INITIALIZE DATABASE MODELS and CREATE SESSION '''
     await init_models(connection)
     session_maker = get_session_maker(connection)
